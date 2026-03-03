@@ -1,18 +1,23 @@
 <?php
+
 header("Content-Type: application/json");
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 
 // ================= DB CONNECT =================
-$conn = mysqli_connect("localhost","root","","timetable_db");
-if(!$conn){
-    echo json_encode(["status"=>"error","message"=>"DB connection failed"]);
+$conn = mysqli_connect("localhost","root","","tsquare");
+
+if (!$conn) {
+    echo json_encode(["status" => "error", "message" => "DB connection failed"]);
     exit;
 }
 
 // ================= GET INPUT =================
-$data = json_decode(file_get_contents("php://input"), true);
+$input = file_get_contents("php://input");
+$data = json_decode($input, true);
 
-if(!$data){
-    echo json_encode(["status"=>"error","message"=>"Invalid JSON"]);
+if (!$data) {
+    echo json_encode(["status" => "error", "message" => "Invalid JSON"]);
     exit;
 }
 
@@ -24,156 +29,146 @@ $academic_year = $data['academic_year'];
 $subjects = $data['subjects'];
 
 $days = ["Mon","Tue","Wed","Thu","Fri"];
-$pairs = [[1,2],[2,3],[3,4],[4,5],[5,6],[6,7]];
+$maxHours = 7;
+$totalSlots = 35;
 
 $timetable = [];
+$unplaced = 0;
 
 // ================= HELPER FUNCTIONS =================
 
-// Check slot already taken in this generated timetable
-function isTaken($tt,$day,$hour){
+function isTaken($tt, $day, $hour){
     return isset($tt[$day][$hour]);
 }
 
-// Check staff clash from DB
-function isStaffBusy($staff,$day,$hour,$academic_year){
-global $conn;
-
-$q = mysqli_query($conn,"
-SELECT id FROM timetable
-WHERE staff_id='$staff'
-AND day='$day'
-AND hour_no='$hour'
-AND academic_year='$academic_year'
-");
-
-return mysqli_num_rows($q) > 0;
+function isStaffBusy($staff, $day, $hour, $academic_year){
+    global $conn;
+    $q = mysqli_query($conn,"
+        SELECT id FROM timetable
+        WHERE staff_id='$staff'
+        AND day='$day'
+        AND hour_no='$hour'
+        AND academic_year='$academic_year'
+    ");
+    return mysqli_num_rows($q) > 0;
 }
 
-// Assign slot
-function assign(&$tt,$day,$hour,$sub){
+function assign(&$tt, $day, $hour, $sub){
     $tt[$day][$hour] = $sub;
 }
 
-// ================= LAB SCHEDULING =================
-
-foreach($subjects as $sub){
-
-if($sub['type'] == "lab"){
-
-$pairsNeeded = floor($sub['periods']/2);
-$single = $sub['periods'] % 2;
-$usedDays = [];
-
-// Place 2 consecutive periods
-while($pairsNeeded > 0){
-
-$day = $days[array_rand($days)];
-if(in_array($day,$usedDays)) continue;
-
-$pair = $pairs[array_rand($pairs)];
-
-if(
-!isTaken($timetable,$day,$pair[0]) &&
-!isTaken($timetable,$day,$pair[1]) &&
-!isStaffBusy($sub['staff_id'],$day,$pair[0],$academic_year) &&
-!isStaffBusy($sub['staff_id'],$day,$pair[1],$academic_year)
-){
-assign($timetable,$day,$pair[0],$sub);
-assign($timetable,$day,$pair[1],$sub);
-$usedDays[] = $day;
-$pairsNeeded--;
-}
-}
-
-// Place single period if odd
-if($single == 1){
-while(true){
-
-$day = $days[array_rand($days)];
-$hour = rand(1,7);
-
-if(
-!isTaken($timetable,$day,$hour) &&
-!isStaffBusy($sub['staff_id'],$day,$hour,$academic_year)
-){
-assign($timetable,$day,$hour,$sub);
-break;
-}
-}
-}
-
-}
-}
-
-// ================= THEORY SCHEDULING =================
-
-foreach($subjects as $sub){
-
-if($sub['type'] == "theory"){
-
-$remaining = $sub['periods'];
-
-while($remaining > 0){
-
-$day = $days[array_rand($days)];
-$hour = rand(1,7);
-
-if(
-!isTaken($timetable,$day,$hour) &&
-!isStaffBusy($sub['staff_id'],$day,$hour,$academic_year)
-){
-assign($timetable,$day,$hour,$sub);
-$remaining--;
-}
-}
-}
-}
-
-// ================= SAVE TO DB =================
-
-// Remove old timetable for same class & academic year
+// ================= CLEAR OLD =================
 mysqli_query($conn,"
 DELETE FROM timetable
 WHERE class_name='$class'
 AND academic_year='$academic_year'
 ");
 
+// ================= SCHEDULING =================
+
+foreach($subjects as $sub){
+
+    $remaining = $sub['periods'];
+    $attempts = 0;
+
+    // ---- NORMAL TRY (random placement) ----
+    while($remaining > 0 && $attempts < 500){
+
+        $day = $days[array_rand($days)];
+        $hour = rand(1,$maxHours);
+
+        if(
+            !isTaken($timetable,$day,$hour) &&
+            !isStaffBusy($sub['staff_id'],$day,$hour,$academic_year)
+        ){
+            assign($timetable,$day,$hour,$sub);
+            $remaining--;
+        }
+
+        $attempts++;
+    }
+
+    // ---- SAFE OVERRIDE (STILL KEEP STAFF CLASH RULE) ----
+    $overrideAttempts = 0;
+
+    while($remaining > 0 && $overrideAttempts < 200){
+
+        $placed = false;
+
+        foreach($days as $day){
+            for($hour=1;$hour<=$maxHours;$hour++){
+
+                if(
+                    !isTaken($timetable,$day,$hour) &&
+                    !isStaffBusy($sub['staff_id'],$day,$hour,$academic_year)
+                ){
+                    assign($timetable,$day,$hour,$sub);
+                    $remaining--;
+                    $placed = true;
+                    break 2;
+                }
+            }
+        }
+
+        if(!$placed){
+            break;
+        }
+
+        $overrideAttempts++;
+    }
+
+    if($remaining > 0){
+        $unplaced += $remaining;
+    }
+}
+
+// ================= FILL EMPTY SLOTS =================
+
+foreach($days as $day){
+    for($hour=1;$hour<=$maxHours;$hour++){
+        if(!isset($timetable[$day][$hour])){
+            $timetable[$day][$hour] = [
+                "staff_id" => null,
+                "subject" => null
+            ];
+        }
+    }
+}
+
+// ================= SAVE TO DB =================
+
 foreach($timetable as $day => $hrs){
-foreach($hrs as $hour => $sub){
+    foreach($hrs as $hour => $sub){
 
-mysqli_query($conn,"
-INSERT INTO timetable
-(class_name,dept,year,sem,academic_year,day,hour_no,staff_id,subject)
-VALUES
-('$class','$dept','$year','$sem','$academic_year',
- '$day','$hour','".$sub['staff_id']."','".$sub['subject']."')
-");
+        if($sub['staff_id'] === null){
+            mysqli_query($conn,"
+                INSERT INTO timetable
+                (class_name,dept,year,sem,academic_year,day,hour_no,staff_id,subject)
+                VALUES
+                ('$class','$dept','$year','$sem','$academic_year',
+                 '$day','$hour',NULL,NULL)
+            ");
+        } else {
+            $staff_id = $sub['staff_id'];
+            $subject = mysqli_real_escape_string($conn,$sub['subject']);
 
+            mysqli_query($conn,"
+                INSERT INTO timetable
+                (class_name,dept,year,sem,academic_year,day,hour_no,staff_id,subject)
+                VALUES
+                ('$class','$dept','$year','$sem','$academic_year',
+                 '$day','$hour','$staff_id','$subject')
+            ");
+        }
+    }
 }
-}
 
-// ================= RETURN FINAL TIMETABLE (JOIN STAFF) =================
-
-$result = mysqli_query($conn,"
-SELECT t.day,t.hour_no,t.subject,s.name AS staff_name
-FROM timetable t
-JOIN staff s ON t.staff_id = s.id
-WHERE t.class_name='$class'
-AND t.academic_year='$academic_year'
-ORDER BY FIELD(t.day,'Mon','Tue','Wed','Thu','Fri'), t.hour_no
-");
-
-$output = [];
-
-while($row = mysqli_fetch_assoc($result)){
-    $output[] = $row;
-}
+// ================= RETURN RESPONSE =================
 
 echo json_encode([
-    "status"=>"success",
-    "class"=>$class,
-    "academic_year"=>$academic_year,
-    "timetable"=>$output
+    "status" => "success",
+    "class" => $class,
+    "academic_year" => $academic_year,
+    "unplaced_due_to_staff_clash" => $unplaced,
+    "timetable" => $timetable
 ]);
-?>

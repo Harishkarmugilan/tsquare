@@ -53,7 +53,8 @@
 <button onclick="addSubject()">+ Add Subject</button>
 <br><br>
 <button onclick="submitForm()">Generate Timetable</button>
-
+    <br><br>
+    <div id="timetable-display"></div>
 <script>
 let staffList = [];
 
@@ -124,6 +125,7 @@ function submitForm(){
         success: function(response){
             alert("Success!");
             console.log(response);
+            renderTimetable(response.timetable);
         },
         error: function(err){
             alert("Error occurred");
@@ -131,6 +133,34 @@ function submitForm(){
         }
     });
 }
+
+// Render timetable object into HTML table
+function renderTimetable(data){
+    const days = ["Mon","Tue","Wed","Thu","Fri"];
+    let html = '<table border="1" cellpadding="5" cellspacing="0"><thead><tr><th>Hour</th>';
+    days.forEach(d=> html += `<th>${d}</th>`);
+    html += '</tr></thead><tbody>';
+
+    for(let hour=1; hour<=7; hour++){
+        html += `<tr><td>${hour}</td>`;
+        days.forEach(d=>{
+            let cell = '';
+            if(data[d] && data[d][hour]){
+                const entry = data[d][hour];
+                if(entry.subject){
+                    const staff = staffList.find(s=>s.id==entry.staff_id);
+                    const name = staff?staff.name:'Unknown';
+                    cell = `<strong>${entry.subject}</strong><br>${name}`;
+                }
+            }
+            html += `<td>${cell}</td>`;
+        });
+        html += '</tr>';
+    }
+    html += '</tbody></table>';
+    $('#timetable-display').html(html);
+}
+
 </script>
 
 </body>
