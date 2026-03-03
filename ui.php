@@ -57,6 +57,7 @@
     <div id="timetable-display"></div>
 <script>
 let staffList = [];
+let timetableData = {};
 
 // Fetch staff from DB
 $(document).ready(function(){
@@ -125,6 +126,7 @@ function submitForm(){
         success: function(response){
             alert("Success!");
             console.log(response);
+            timetableData = response.timetable;
             renderTimetable(response.timetable);
         },
         error: function(err){

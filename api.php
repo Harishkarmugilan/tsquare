@@ -135,34 +135,6 @@ foreach($days as $day){
     }
 }
 
-// ================= SAVE TO DB =================
-
-foreach($timetable as $day => $hrs){
-    foreach($hrs as $hour => $sub){
-
-        if($sub['staff_id'] === null){
-            mysqli_query($conn,"
-                INSERT INTO timetable
-                (class_name,dept,year,sem,academic_year,day,hour_no,staff_id,subject)
-                VALUES
-                ('$class','$dept','$year','$sem','$academic_year',
-                 '$day','$hour',NULL,NULL)
-            ");
-        } else {
-            $staff_id = $sub['staff_id'];
-            $subject = mysqli_real_escape_string($conn,$sub['subject']);
-
-            mysqli_query($conn,"
-                INSERT INTO timetable
-                (class_name,dept,year,sem,academic_year,day,hour_no,staff_id,subject)
-                VALUES
-                ('$class','$dept','$year','$sem','$academic_year',
-                 '$day','$hour','$staff_id','$subject')
-            ");
-        }
-    }
-}
-
 // ================= RETURN RESPONSE =================
 
 echo json_encode([

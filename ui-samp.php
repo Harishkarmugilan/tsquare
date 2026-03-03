@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Timetable Generator</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -454,6 +455,7 @@
 
 <!-- ===== TIMETABLE DISPLAY ===== -->
 <div id="timetable-display"></div>
+<button onclick="fixTimetable()">Fix timetable</button>
 
 <div id="toast" class="toast"></div>
 
@@ -497,6 +499,7 @@
 
 <script>
 let staffList = [];
+let timetabledata = {};
 let currentTimetable = null; // stores the live timetable data
 
 const COLORS = ['blue','orange','green','red','purple','teal','pink','amber','cyan','lime'];
@@ -521,7 +524,159 @@ $(document).ready(function(){
         addSubject();
     });
 });
+function fixTimetable(){
+    if(!currentTimetable){
+        showToast('No timetable to send', 'error');
+        return;
+    }
+    // Count filled periods across Mon-Fri, periods 1..7
+    const days = ['Mon','Tue','Wed','Thu','Fri'];
+    let filled = 0;
+    days.forEach(d => {
+        for(let h=1; h<=7; h++){
+            if(currentTimetable[d] && currentTimetable[d][h] && currentTimetable[d][h].subject){
+                filled++;
+            }
+        }
+    });
 
+    if(filled < 35){
+        showToast(`Incomplete timetable: ${filled}/35 periods filled`, 'error');
+        return;
+    }
+
+    // Find the Fix button (the simple one on the page) to show spinner/disable
+    const btn = document.querySelector('button[onclick="fixTimetable()"]');
+    let orig = null;
+    if(btn){
+        orig = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span> Sending...';
+    }
+
+    $.ajax({
+        url: 'fixtt.php',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            class: $("#class").val(),
+            dept: $("#dept").val(),
+            year: parseInt($("#year").val()),
+            sem: parseInt($("#sem").val()),
+            academic_year: $("#academic_year").val(),
+            timetable: currentTimetable
+        }),
+        success: function(response){
+            if(btn){ btn.disabled = false; btn.innerHTML = orig; }
+
+            // Handle fixtt.php JSON response and show SweetAlert2 modals
+            try{
+                // response is expected as an object (jQuery parses JSON)
+                if(response && response.status === 'conflicts'){
+                    // build a readable list of conflicts
+                    let list = '<ul style="text-align:left;margin:0;padding-left:18px;">';
+                    response.conflicts.forEach(c => {
+                        const name = c.period_name ? c.period_name : (c.existing_subject ? c.existing_subject : 'Period');
+                        list += `<li>${name} — ${c.day}, Period ${c.hour_no}</li>`;
+                        
+                    });
+                    list+= '<li> do you want to proceed anyway? then press ok. this will overide the old data</li>';
+                    list += '</ul>';
+
+                    Swal.fire({
+                        title: 'Conflicting Periods',
+                        html: list,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'OK',
+                        cancelButtonText: 'No',
+                        allowOutsideClick: false
+                    }).then(result => {
+                        if(result.isConfirmed){
+                            // user chose to proceed; resend same payload with override=true
+                            if(btn){ btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Overriding...'; }
+
+                            $.ajax({
+                                url: 'fixtt.php',
+                                type: 'POST',
+                                contentType: 'application/json',
+                                data: JSON.stringify({
+                                    class: $("#class").val(),
+                                    dept: $("#dept").val(),
+                                    year: parseInt($("#year").val()),
+                                    sem: parseInt($("#sem").val()),
+                                    academic_year: $("#academic_year").val(),
+                                    timetable: currentTimetable,
+                                    override: true
+                                }),
+                                success: function(resp){
+                                    if(btn){ btn.disabled = false; btn.innerHTML = orig; }
+                                    try{
+                                        if(resp && resp.status === 'conflicts'){
+                                            Swal.fire({
+                                                title: 'Still Conflicts',
+                                                html: '<pre style="text-align:left">'+JSON.stringify(resp.conflicts, null, 2)+'</pre>',
+                                                icon: 'warning'
+                                            });
+                                        } else if(resp && resp.status === 'ok'){
+                                            Swal.fire({
+                                                title: 'Saved',
+                                                text: resp.message || 'Override applied successfully',
+                                                icon: 'success'
+                                            });
+                                        } else {
+                                            Swal.fire({ title: 'Response', text: JSON.stringify(resp), icon: 'info' });
+                                        }
+                                    }catch(e){
+                                        console.error('Error handling override response', e);
+                                    }
+                                    console.log('fixtt.php override response:', resp);
+                                },
+                                error: function(err){
+                                    if(btn){ btn.disabled = false; btn.innerHTML = orig; }
+                                    Swal.fire({ title: 'Error', text: 'Failed to send override', icon: 'error' });
+                                    console.error('fixtt.php override error:', err);
+                                }
+                            });
+                        }
+                    });
+
+                } else if(response && response.status === 'ok'){
+                    Swal.fire({
+                        title: 'No Conflicts',
+                        text: response.message || 'No periods conflict',
+                        icon: 'success',
+                        confirmButtonText: 'OK'
+                    });
+
+                } else {
+                    Swal.fire({
+                        title: 'Response',
+                        text: JSON.stringify(response),
+                        icon: 'info',
+                        confirmButtonText: 'OK'
+                    });
+                }
+            }catch(e){
+                console.error('Error handling fixtt response', e);
+                Swal.fire({
+                    title: 'Error',
+                    text: 'Failed to parse response from server',
+                    icon: 'error',
+                    confirmButtonText: 'OK'
+                });
+            }
+
+            showToast('Timetable sent to fixtt.php', 'success');
+            console.log('fixtt.php response:', response);
+        },
+        error: function(err){
+            if(btn){ btn.disabled = false; btn.innerHTML = orig; }
+            showToast('Failed to send timetable', 'error');
+            console.error('fixtt.php error:', err);
+        }
+    });
+}
 function addSubject(){
     let options = '';
     staffList.forEach(staff => {
@@ -560,6 +715,7 @@ function showToast(msg, type){
 
 function submitForm(){
     let subjects = [];
+    timetableData = {}; // reset timetable data on new submission
 
     $(".subject-row").each(function(){
         subjects.push({
@@ -593,6 +749,7 @@ function submitForm(){
             btn.disabled = false;
             showToast('Timetable generated successfully!', 'success');
             console.log(response);
+            timetableData = response.timetable;
             currentTimetable = response.timetable;
             renderTimetable(currentTimetable);
         },
