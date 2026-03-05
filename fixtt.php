@@ -22,6 +22,7 @@ $timetable = $payload['timetable'] ?? null;
 $override = !empty($payload['override']);
 
 $conn = mysqli_connect("localhost", "root", "", "tsquare");
+
 if (!$conn) {
     echo json_encode(['error' => 'db connection failed']);
     exit;
@@ -32,132 +33,216 @@ if (!$class || !$dept || $year === null || $sem === null || !$academic_year || !
     exit;
 }
 
+$class_esc = mysqli_real_escape_string($conn,$class);
+$dept_esc = mysqli_real_escape_string($conn,$dept);
+$ay_esc = mysqli_real_escape_string($conn,$academic_year);
+
+
 /* ===========================
-   CONFLICT CHECK FUNCTION
+   CONFLICT CHECK
    =========================== */
 
-function checkConflicts($conn, $class, $dept, $year, $sem, $academic_year, $timetable)
+function checkConflicts($conn,$timetable,$academic_year)
 {
-    $conflicts = [];
 
-    foreach ($timetable as $day => $hours) {
-        if (!is_array($hours)) continue;
+    $conflicts=[];
+    $staffconflicts=[];
 
-        foreach ($hours as $hour_no => $entry) {
+    foreach($timetable as $day=>$hours){
 
-            if (!is_array($entry) || empty($entry['staff_id'])) continue;
+        if(!is_array($hours)) continue;
 
-            $staff_id = intval($entry['staff_id']);
-            $hour_no = intval($hour_no);
+        foreach($hours as $hour=>$entry){
 
-            $day_esc = mysqli_real_escape_string($conn, $day);
-            $ay_esc = mysqli_real_escape_string($conn, $academic_year);
+            if(!is_array($entry) || empty($entry['staff_id'])) continue;
 
-            // 🔥 Check staff double booking (real conflict)
-            $q = mysqli_query($conn, "
-                SELECT class_name FROM timetable
-                WHERE staff_id = $staff_id
-                AND day = '$day_esc'
-                AND hour_no = $hour_no
-                AND academic_year = '$ay_esc'
+            $staff_id=intval($entry['staff_id']);
+            $hour=intval($hour);
+
+            $day=mysqli_real_escape_string($conn,$day);
+            $ay=mysqli_real_escape_string($conn,$academic_year);
+
+            $q=mysqli_query($conn,"
+                SELECT class_name
+                FROM timetable
+                WHERE staff_id=$staff_id
+                AND day='$day'
+                AND hour_no=$hour
+                AND academic_year='$ay'
                 LIMIT 1
             ");
 
-            if ($q && mysqli_num_rows($q) > 0) {
-                $row = mysqli_fetch_assoc($q);
+            if($q && mysqli_num_rows($q)>0){
 
-                $conflicts[] = [
-                    'day' => $day,
-                    'hour_no' => $hour_no,
-                    'staff_id' => $staff_id,
-                    'conflict_with_class' => $row['class_name']
+                $row=mysqli_fetch_assoc($q);
+
+                $staffconflicts[]=[
+                    'day'=>$day,
+                    'hour_no'=>$hour,
+                    'staff_id'=>$staff_id,
+                    'conflict_with_class'=>$row['class_name']
                 ];
+
             }
+
+            $z=mysqli_query($conn,"
+                SELECT class_name
+                FROM timetable
+                WHERE staff_id=$staff_id
+                AND day='$day'
+                AND hour_no=$hour
+                AND academic_year='$ay'
+                LIMIT 1
+            ");
+
+            if($z && mysqli_num_rows($z)>0){
+
+                $row=mysqli_fetch_assoc($z);
+
+                $classconflicts[]=[
+                    'day'=>$day,
+                    'hour_no'=>$hour,
+                    'staff_id'=>$staff_id,
+                    'conflict_with_class'=>$row['class_name']
+                ];
+
+            }
+
         }
+
     }
+
+    $conflicts['staffconflicts']=$staffconflicts;
+    $conflicts['classconflicts']=$classconflicts;
 
     return $conflicts;
+
 }
+
 
 /* ===========================
-   UPDATE / INSERT FUNCTION
+   UPDATE TIMETABLE
    =========================== */
 
-function updateTimetable($conn, $class, $dept, $year, $sem, $academic_year, $timetable)
+function updateTimetable($conn,$class,$dept,$year,$sem,$academic_year,$timetable,$override)
 {
-    $class_esc = mysqli_real_escape_string($conn, $class);
-    $dept_esc = mysqli_real_escape_string($conn, $dept);
-    $ay_esc = mysqli_real_escape_string($conn, $academic_year);
 
-    foreach ($timetable as $day => $hours) {
-        if (!is_array($hours)) continue;
+$class_esc=mysqli_real_escape_string($conn,$class);
+$dept_esc=mysqli_real_escape_string($conn,$dept);
+$ay_esc=mysqli_real_escape_string($conn,$academic_year);
 
-        foreach ($hours as $hour => $entry) {
 
-            $hour = intval($hour);
-            $day_esc = mysqli_real_escape_string($conn, $day);
+/* remove old timetable of the class */
 
-            $staff_val = "NULL";
-            $sub_val = "NULL";
+mysqli_query($conn,"
+DELETE FROM timetable
+WHERE class_name='$class_esc'
+AND dept='$dept_esc'
+AND year=$year
+AND sem=$sem
+AND academic_year='$ay_esc'
+");
 
-            if (is_array($entry)) {
-                if (!empty($entry['staff_id'])) {
-                    $staff_val = intval($entry['staff_id']);
-                }
-                if (!empty($entry['subject'])) {
-                    $subject = mysqli_real_escape_string($conn, $entry['subject']);
-                    $sub_val = "'$subject'";
-                }
+
+foreach($timetable as $day=>$hours){
+
+    if(!is_array($hours)) continue;
+
+    foreach($hours as $hour=>$entry){
+
+        $hour=intval($hour);
+        $day_esc=mysqli_real_escape_string($conn,$day);
+
+        $staff_val="NULL";
+        $sub_val="NULL";
+
+        if(is_array($entry)){
+
+            if(!empty($entry['staff_id'])){
+                $staff_val=intval($entry['staff_id']);
             }
 
-            $sql = "
-                INSERT INTO timetable
-                (class_name, dept, year, sem, academic_year, day, hour_no, staff_id, subject)
-                VALUES
-                ('$class_esc', '$dept_esc', $year, $sem, '$ay_esc', '$day_esc', $hour, $staff_val, $sub_val)
-                ON DUPLICATE KEY UPDATE
-                staff_id = VALUES(staff_id),
-                subject = VALUES(subject)
-            ";
-
-            if (!mysqli_query($conn, $sql)) {
-                return false;
+            if(!empty($entry['subject'])){
+                $subject=mysqli_real_escape_string($conn,$entry['subject']);
+                $sub_val="'$subject'";
             }
+
         }
+
+        /* override staff conflict */
+
+        if($staff_val!="NULL"){
+
+            mysqli_query($conn,"
+            DELETE FROM timetable
+            WHERE staff_id=$staff_val
+            AND day='$day_esc'
+            AND hour_no=$hour
+            AND academic_year='$ay_esc'
+            ");
+
+        }
+
+
+        $sql="
+        INSERT INTO timetable
+        (class_name,dept,year,sem,academic_year,day,hour_no,staff_id,subject)
+        VALUES
+        ('$class_esc','$dept_esc',$year,$sem,'$ay_esc','$day_esc',$hour,$staff_val,$sub_val)
+        ";
+
+        if(!mysqli_query($conn,$sql)){
+            return false;
+        }
+
     }
 
-    return true;
 }
+
+return true;
+
+}
+
+
 
 /* ===========================
    MAIN LOGIC
    =========================== */
 
-// If NOT override → check conflicts first
-if (!$override) {
+if(!$override){
 
-    $conflicts = checkConflicts($conn, $class, $dept, $year, $sem, $academic_year, $timetable);
+$conflicts=checkConflicts($conn,$timetable,$academic_year);
 
-    if (count($conflicts) > 0) {
-        echo json_encode([
-            'status' => 'conflicts',
-            'conflicts' => $conflicts
-        ]);
-        exit;
-    }
+if(count($conflicts['staffconflicts'])>0){
+
+    echo json_encode([
+        'status'=>'conflicts',
+        'conflicts'=>$conflicts
+    ]);
+
+    exit;
+
 }
 
-// If override OR no conflicts → update
-$success = updateTimetable($conn, $class, $dept, $year, $sem, $academic_year, $timetable);
-
-if ($success) {
-    echo json_encode([
-        'status' => 'ok',
-        'message' => $override ? 'override applied' : 'timetable updated'
-    ]);
-} else {
-    echo json_encode([
-        'status' => 'error',
-        'message' => 'database operation failed'
-    ]);
 }
+
+
+$success=updateTimetable($conn,$class,$dept,$year,$sem,$academic_year,$timetable,$override);
+
+
+if($success){
+
+echo json_encode([
+'status'=>'ok',
+'message'=>$override ? 'override applied' : 'timetable updated'
+]);
+
+}else{
+
+echo json_encode([
+'status'=>'error',
+'message'=>'database operation failed'
+]);
+
+}
+?>

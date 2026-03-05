@@ -554,128 +554,183 @@ function fixTimetable(){
         btn.innerHTML = '<span class="spinner"></span> Sending...';
     }
 
-    $.ajax({
-        url: 'fixtt.php',
-        type: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify({
-            class: $("#class").val(),
-            dept: $("#dept").val(),
-            year: parseInt($("#year").val()),
-            sem: parseInt($("#sem").val()),
-            academic_year: $("#academic_year").val(),
-            timetable: currentTimetable
-        }),
-        success: function(response){
-            if(btn){ btn.disabled = false; btn.innerHTML = orig; }
+    const payload = {
+    class: $("#class").val(),
+    dept: $("#dept").val(),
+    year: parseInt($("#year").val()),
+    sem: parseInt($("#sem").val()),
+    academic_year: $("#academic_year").val(),
+    timetable: currentTimetable
+};
 
-            // Handle fixtt.php JSON response and show SweetAlert2 modals
-            try{
-                // response is expected as an object (jQuery parses JSON)
-                if(response && response.status === 'conflicts'){
-                    // build a readable list of conflicts
-                    let list = '<ul style="text-align:left;margin:0;padding-left:18px;">';
-                    response.conflicts.forEach(c => {
-                        const name = c.period_name ? c.period_name : (c.existing_subject ? c.existing_subject : 'Period');
-                        list += `<li>${name} — ${c.day}, Period ${c.hour_no}</li>`;
-                        
-                    });
-                    list+= '<li> do you want to proceed anyway? then press ok. this will overide the old data</li>';
-                    list += '</ul>';
+$.ajax({
+    url: 'fixtt.php',
+    type: 'POST',
+    contentType: 'application/json',
+    dataType: 'json',
+    data: JSON.stringify(payload),
 
-                    Swal.fire({
-                        title: 'Conflicting Periods',
-                        html: list,
-                        icon: 'warning',
-                        showCancelButton: true,
-                        confirmButtonText: 'OK',
-                        cancelButtonText: 'No',
-                        allowOutsideClick: false
-                    }).then(result => {
-                        if(result.isConfirmed){
-                            // user chose to proceed; resend same payload with override=true
-                            if(btn){ btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Overriding...'; }
+    success: function(response){
 
-                            $.ajax({
-                                url: 'fixtt.php',
-                                type: 'POST',
-                                contentType: 'application/json',
-                                data: JSON.stringify({
-                                    class: $("#class").val(),
-                                    dept: $("#dept").val(),
-                                    year: parseInt($("#year").val()),
-                                    sem: parseInt($("#sem").val()),
-                                    academic_year: $("#academic_year").val(),
-                                    timetable: currentTimetable,
-                                    override: true
-                                }),
-                                success: function(resp){
-                                    if(btn){ btn.disabled = false; btn.innerHTML = orig; }
-                                    try{
-                                        if(resp && resp.status === 'conflicts'){
-                                            Swal.fire({
-                                                title: 'Still Conflicts',
-                                                html: '<pre style="text-align:left">'+JSON.stringify(resp.conflicts, null, 2)+'</pre>',
-                                                icon: 'warning'
-                                            });
-                                        } else if(resp && resp.status === 'ok'){
-                                            Swal.fire({
-                                                title: 'Saved',
-                                                text: resp.message || 'Override applied successfully',
-                                                icon: 'success'
-                                            });
-                                        } else {
-                                            Swal.fire({ title: 'Response', text: JSON.stringify(resp), icon: 'info' });
-                                        }
-                                    }catch(e){
-                                        console.error('Error handling override response', e);
-                                    }
-                                    console.log('fixtt.php override response:', resp);
-                                },
-                                error: function(err){
-                                    if(btn){ btn.disabled = false; btn.innerHTML = orig; }
-                                    Swal.fire({ title: 'Error', text: 'Failed to send override', icon: 'error' });
-                                    console.error('fixtt.php override error:', err);
-                                }
-                            });
-                        }
-                    });
+        if(btn){
+            btn.disabled = false;
+            btn.innerHTML = orig;
+        }
 
-                } else if(response && response.status === 'ok'){
-                    Swal.fire({
-                        title: 'No Conflicts',
-                        text: response.message || 'No periods conflict',
-                        icon: 'success',
-                        confirmButtonText: 'OK'
-                    });
+        try{
 
-                } else {
-                    Swal.fire({
-                        title: 'Response',
-                        text: JSON.stringify(response),
-                        icon: 'info',
-                        confirmButtonText: 'OK'
+            if(response && response.status === 'conflicts'){
+
+                let list = '<ul style="text-align:left;margin:0;padding-left:18px;">';
+
+                if(response.conflicts && response.conflicts.staffconflicts){
+                    response.conflicts.staffconflicts.forEach(c=>{
+                        list += `<li>Staff ${c.staff_id} conflict with ${c.conflict_with_class} — ${c.day}, Period ${c.hour_no}</li>`;
                     });
                 }
-            }catch(e){
-                console.error('Error handling fixtt response', e);
+
+                if(response.conflicts && response.conflicts.classconflicts){
+                    response.conflicts.classconflicts.forEach(c=>{
+                        list += `<li>Class conflict — ${c.day}, Period ${c.hour_no}</li>`;
+                    });
+                }
+
+                list += '<li><b>Do you want to proceed anyway? This will override the old data.</b></li>';
+                list += '</ul>';
+
                 Swal.fire({
-                    title: 'Error',
-                    text: 'Failed to parse response from server',
-                    icon: 'error',
-                    confirmButtonText: 'OK'
+                    title: 'Conflicting Periods',
+                    html: list,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Override',
+                    cancelButtonText: 'Cancel',
+                    allowOutsideClick: false
+                }).then(result => {
+
+                    if(result.isConfirmed){
+
+                        if(btn){
+                            btn.disabled = true;
+                            btn.innerHTML = '<span class="spinner"></span> Overriding...';
+                        }
+
+                        payload.override = true;
+
+                        $.ajax({
+                            url: 'fixtt.php',
+                            type: 'POST',
+                            contentType: 'application/json',
+                            dataType: 'json',
+                            data: JSON.stringify(payload),
+
+                            success: function(resp){
+
+                                if(btn){
+                                    btn.disabled = false;
+                                    btn.innerHTML = orig;
+                                }
+
+                                if(resp && resp.status === 'ok'){
+
+                                    Swal.fire({
+                                        title: 'Saved',
+                                        text: resp.message || 'Override applied successfully',
+                                        icon: 'success'
+                                    });
+
+                                } else if(resp && resp.status === 'conflicts'){
+
+                                    Swal.fire({
+                                        title: 'Still Conflicts',
+                                        html: '<pre style="text-align:left">'+JSON.stringify(resp.conflicts,null,2)+'</pre>',
+                                        icon: 'warning'
+                                    });
+
+                                } else {
+
+                                    Swal.fire({
+                                        title: 'Server Response',
+                                        text: JSON.stringify(resp),
+                                        icon: 'info'
+                                    });
+
+                                }
+
+                                console.log('Override response:', resp);
+                            },
+
+                            error: function(err){
+
+                                if(btn){
+                                    btn.disabled = false;
+                                    btn.innerHTML = orig;
+                                }
+
+                                Swal.fire({
+                                    title: 'Error',
+                                    text: 'Failed to send override',
+                                    icon: 'error'
+                                });
+
+                                console.error('Override error:', err);
+                            }
+                        });
+
+                    }
+
                 });
+
             }
 
-            showToast('Timetable sent to fixtt.php', 'success');
-            console.log('fixtt.php response:', response);
-        },
-        error: function(err){
-            if(btn){ btn.disabled = false; btn.innerHTML = orig; }
-            showToast('Failed to send timetable', 'error');
-            console.error('fixtt.php error:', err);
+            else if(response && response.status === 'ok'){
+
+                Swal.fire({
+                    title: 'Success',
+                    text: response.message || 'Timetable updated',
+                    icon: 'success'
+                });
+
+            }
+
+            else{
+
+                Swal.fire({
+                    title: 'Server Response',
+                    text: JSON.stringify(response),
+                    icon: 'info'
+                });
+
+            }
+
         }
-    });
+        catch(e){
+
+            console.error('Response parsing error:', e);
+
+            Swal.fire({
+                title: 'Error',
+                text: 'Failed to parse server response',
+                icon: 'error'
+            });
+
+        }
+
+        showToast('Timetable sent to fixtt.php', 'success');
+        console.log('fixtt.php response:', response);
+    },
+
+    error: function(err){
+
+        if(btn){
+            btn.disabled = false;
+            btn.innerHTML = orig;
+        }
+
+        showToast('Failed to send timetable', 'error');
+        console.error('fixtt.php error:', err);
+    }
+});
 }
 function addSubject(){
     let options = '';

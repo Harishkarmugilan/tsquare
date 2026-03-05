@@ -5,7 +5,7 @@ error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
 // ================= DB CONNECT =================
-$conn = mysqli_connect("localhost","root","","tsquare");
+$conn = mysqli_connect("localhost","user","","tsquare");
 
 if (!$conn) {
     echo json_encode(["status" => "error", "message" => "DB connection failed"]);
@@ -56,13 +56,6 @@ function isStaffBusy($staff, $day, $hour, $academic_year){
 function assign(&$tt, $day, $hour, $sub){
     $tt[$day][$hour] = $sub;
 }
-
-// ================= CLEAR OLD =================
-mysqli_query($conn,"
-DELETE FROM timetable
-WHERE class_name='$class'
-AND academic_year='$academic_year'
-");
 
 // ================= SCHEDULING =================
 
