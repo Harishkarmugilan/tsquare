@@ -6,148 +6,320 @@
     <title>Timetable Generator</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <style>
+        :root {
+            --color-primary: #4f46e5;
+            --color-primary-dark: #4338ca;
+            --color-success: #059669;
+            --color-danger: #ef4444;
+            --color-warning: #f59e0b;
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-tertiary: #f1f5f9;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --text-muted: #94a3b8;
+            --border-color: #e2e8f0;
+            --border-hover: #cbd5e1;
+            --rounded-sm: 8px;
+            --rounded-md: 12px;
+            --rounded-lg: 16px;
+            --rounded-xl: 20px;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        
         body {
-            font-family: 'Inter', sans-serif;
-            background: #f0f2f5;
-            padding: 30px;
-            color: #333;
+            font-family: 'Inter Tight', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #f0f4ff 0%, #e8f0fe 50%, #f5f3ff 100%);
+            min-height: 100vh;
+            padding: 40px 30px;
+            color: var(--text-primary);
+        }
+
+        /* ===== PAGE HEADER ===== */
+        .page-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .page-header h1 {
+            font-size: 32px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--color-primary) 0%, #7c3aed 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+        .page-header p {
+            font-size: 15px;
+            color: var(--text-secondary);
         }
 
         /* ===== FORM SECTION ===== */
         .form-section {
-            background: #fff;
-            border-radius: 16px;
-            padding: 30px;
-            box-shadow: 0 2px 20px rgba(0,0,0,0.06);
+            background: var(--bg-primary);
+            border-radius: var(--rounded-xl);
+            padding: 32px;
+            box-shadow: var(--shadow-lg);
             margin-bottom: 30px;
+            border: 1px solid var(--border-color);
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
         }
         .form-section h2 {
-            font-size: 22px;
+            font-size: 20px;
             font-weight: 700;
-            color: #1a1a2e;
-            margin-bottom: 20px;
+            color: var(--text-primary);
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .form-section h2 i {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            border-radius: var(--rounded-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--color-primary);
+            font-size: 16px;
         }
         .form-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 14px;
-            margin-bottom: 10px;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        .form-field {
+            position: relative;
+        }
+        .form-field label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         .form-grid input, .form-grid select {
             width: 100%;
-            padding: 10px 14px;
-            border: 1.5px solid #e0e0e0;
-            border-radius: 10px;
+            padding: 12px 16px;
+            border: 2px solid var(--border-color);
+            border-radius: var(--rounded-md);
             font-size: 14px;
-            font-family: 'Inter', sans-serif;
-            background: #fafafa;
-            transition: border-color .2s, box-shadow .2s;
+            font-family: inherit;
+            background: var(--bg-secondary);
+            transition: all 0.2s ease;
             outline: none;
+            color: var(--text-primary);
         }
         .form-grid input:focus, .form-grid select:focus {
-            border-color: #4f46e5;
-            box-shadow: 0 0 0 3px rgba(79,70,229,.1);
-            background: #fff;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+            background: var(--bg-primary);
+        }
+        .form-grid input::placeholder {
+            color: var(--text-muted);
         }
 
         /* ===== SUBJECTS ===== */
         .subjects-title {
-            font-size: 17px;
-            font-weight: 600;
-            color: #1a1a2e;
-            margin: 24px 0 14px;
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 28px 0 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .subjects-title i {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+            border-radius: var(--rounded-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #7c3aed;
+            font-size: 14px;
         }
         .subject-row {
             display: grid;
             grid-template-columns: 1.5fr 1fr .6fr .8fr auto;
-            gap: 10px;
+            gap: 12px;
             align-items: center;
-            background: #f8f9fb;
-            border: 1.5px solid #eee;
-            border-radius: 12px;
-            padding: 12px 16px;
-            margin-bottom: 10px;
-            transition: border-color .2s;
+            background: var(--bg-tertiary);
+            border: 2px solid var(--border-color);
+            border-radius: var(--rounded-md);
+            padding: 16px 20px;
+            margin-bottom: 12px;
+            transition: all 0.2s ease;
         }
-        .subject-row:hover { border-color: #c7d2fe; }
+        .subject-row:hover { 
+            border-color: var(--border-hover);
+            box-shadow: var(--shadow-sm);
+        }
         .subject-row select, .subject-row input {
             width: 100%;
-            padding: 9px 12px;
-            border: 1.5px solid #e0e0e0;
-            border-radius: 8px;
+            padding: 10px 14px;
+            border: 2px solid var(--border-color);
+            border-radius: var(--rounded-sm);
             font-size: 13px;
-            font-family: 'Inter', sans-serif;
-            background: #fff;
+            font-family: inherit;
+            background: var(--bg-primary);
             outline: none;
-            transition: border-color .2s;
+            transition: all 0.2s ease;
+            color: var(--text-primary);
         }
         .subject-row select:focus, .subject-row input:focus {
-            border-color: #4f46e5;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
         }
 
         /* ===== BUTTONS ===== */
         .btn {
-            padding: 10px 22px;
+            padding: 12px 24px;
             border: none;
-            border-radius: 10px;
+            border-radius: var(--rounded-md);
             font-size: 14px;
             font-weight: 600;
-            font-family: 'Inter', sans-serif;
+            font-family: inherit;
             cursor: pointer;
-            transition: transform .15s, box-shadow .2s;
+            transition: all 0.2s ease;
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            justify-content: center;
+            gap: 8px;
+            text-decoration: none;
         }
-        .btn:active { transform: scale(.97); }
+        .btn:active { transform: scale(0.98); }
         .btn-primary {
-            background: linear-gradient(135deg, #4f46e5, #6366f1);
+            background: linear-gradient(135deg, var(--color-primary) 0%, #6366f1 100%);
             color: #fff;
-            box-shadow: 0 4px 14px rgba(79,70,229,.3);
+            box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
         }
-        .btn-primary:hover { box-shadow: 0 6px 20px rgba(79,70,229,.4); }
+        .btn-primary:hover { 
+            box-shadow: 0 6px 20px rgba(79, 70, 229, 0.45);
+            transform: translateY(-1px);
+        }
         .btn-success {
-            background: linear-gradient(135deg, #059669, #10b981);
+            background: linear-gradient(135deg, var(--color-success) 0%, #10b981 100%);
             color: #fff;
-            box-shadow: 0 4px 14px rgba(5,150,105,.3);
+            box-shadow: 0 4px 14px rgba(5, 150, 105, 0.35);
         }
-        .btn-success:hover { box-shadow: 0 6px 20px rgba(5,150,105,.4); }
+        .btn-success:hover { 
+            box-shadow: 0 6px 20px rgba(5, 150, 105, 0.45);
+            transform: translateY(-1px);
+        }
+        .btn-save {
+            background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%);
+            color: #fff;
+            box-shadow: 0 4px 14px rgba(14, 165, 233, 0.35);
+        }
+        .btn-save:hover {
+            box-shadow: 0 6px 20px rgba(14, 165, 233, 0.45);
+            transform: translateY(-1px);
+        }
         .btn-danger {
             background: transparent;
-            color: #ef4444;
-            border: 1.5px solid #fca5a5;
-            padding: 8px 14px;
+            color: var(--color-danger);
+            border: 2px solid #fecaca;
+            padding: 10px 16px;
             font-size: 13px;
         }
-        .btn-danger:hover { background: #fef2f2; }
-        .btn-group { display: flex; gap: 10px; margin-top: 18px; }
+        .btn-danger:hover { 
+            background: #fef2f2;
+            border-color: #fca5a5;
+        }
+        .btn-group { 
+            display: flex; 
+            gap: 12px; 
+            margin-top: 24px;
+            flex-wrap: wrap;
+        }
+
+        /* Save Button - Hidden by default */
+        #saveBtn {
+            display: none;
+        }
+        #saveBtn.visible {
+            display: inline-flex;
+            animation: fadeSlideIn 0.4s ease;
+        }
+        @keyframes fadeSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
 
         /* ===== TIMETABLE SECTION ===== */
         .schedule-section {
-            background: #fff;
-            border-radius: 16px;
-            padding: 30px;
-            box-shadow: 0 2px 20px rgba(0,0,0,0.06);
+            background: var(--bg-primary);
+            border-radius: var(--rounded-xl);
+            padding: 32px;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border-color);
+            max-width: 1200px;
+            margin: 0 auto;
         }
         .schedule-header {
             display: flex;
             align-items: center;
-            gap: 10px;
-            margin-bottom: 24px;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 28px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid var(--bg-tertiary);
+        }
+        .schedule-header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
         .schedule-header h2 {
             font-size: 22px;
             font-weight: 700;
-            color: #1a1a2e;
+            color: var(--text-primary);
         }
-        .schedule-header .edit-icon {
-            color: #9ca3af;
-            cursor: pointer;
-            font-size: 16px;
+        .schedule-header-icon {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            border-radius: var(--rounded-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--color-success);
+            font-size: 18px;
+        }
+        .schedule-badge {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            color: var(--color-success);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
         /* ===== TABLE GRID ===== */
@@ -155,139 +327,157 @@
             width: 100%;
             border-collapse: separate;
             border-spacing: 0;
+            border-radius: var(--rounded-lg);
+            overflow: hidden;
+            border: 2px solid var(--border-color);
         }
         .tt-grid th {
-            background: #f8f9fb;
-            padding: 14px 10px;
-            font-size: 14px;
-            font-weight: 600;
-            color: #6b7280;
+            background: linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-secondary) 100%);
+            padding: 16px 12px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-secondary);
             text-transform: uppercase;
-            letter-spacing: .5px;
-            border-bottom: 2px solid #e5e7eb;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid var(--border-color);
         }
-        .tt-grid th:first-child { border-radius: 12px 0 0 0; }
-        .tt-grid th:last-child  { border-radius: 0 12px 0 0; }
-
         .tt-grid td {
-            padding: 6px;
+            padding: 8px;
             vertical-align: top;
-            border-bottom: 1px solid #f0f0f0;
+            border-bottom: 1px solid var(--border-color);
+            border-right: 1px solid var(--border-color);
             height: 110px;
             width: 16%;
+            background: var(--bg-primary);
+        }
+        .tt-grid td:last-child {
+            border-right: none;
+        }
+        .tt-grid tr:last-child td {
+            border-bottom: none;
         }
         .tt-grid td:first-child {
             width: 120px;
             text-align: center;
             vertical-align: middle;
-            font-size: 13px;
-            font-weight: 600;
-            color: #6b7280;
-            background: #fafbfc;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            background: var(--bg-secondary);
         }
 
         /* ===== SUBJECT CARDS ===== */
         .tt-card {
-            border-radius: 12px;
+            border-radius: var(--rounded-md);
             padding: 12px 14px;
             height: 100%;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
             border: 2px solid;
-            transition: transform .15s, box-shadow .2s;
+            transition: all 0.2s ease;
             cursor: default;
+            position: relative;
+            overflow: hidden;
+        }
+        .tt-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: currentColor;
+            opacity: 0.6;
         }
         .tt-card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(0,0,0,.08);
+            box-shadow: var(--shadow-md);
         }
         .tt-card .card-subject {
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 700;
-            color: #1a1a2e;
+            color: var(--text-primary);
             margin-bottom: 4px;
+            line-height: 1.3;
         }
         .tt-card .card-staff {
-            font-size: 12px;
-            color: #6b7280;
+            font-size: 11px;
+            color: var(--text-secondary);
             line-height: 1.4;
         }
         .tt-card .card-actions {
             display: flex;
             gap: 8px;
-            margin-top: 8px;
+            margin-top: 10px;
         }
         .tt-card .card-actions a {
-            font-size: 14px;
+            font-size: 13px;
             cursor: pointer;
-            transition: transform .15s;
+            transition: all 0.15s ease;
+            opacity: 0.7;
         }
-        .tt-card .card-actions a:hover { transform: scale(1.2); }
-        .action-edit { color: #374151; }
-        .action-delete { color: #ef4444; }
+        .tt-card .card-actions a:hover { 
+            transform: scale(1.2);
+            opacity: 1;
+        }
+        .action-edit { color: var(--text-primary); }
+        .action-delete { color: var(--color-danger); }
 
         /* Color themes */
-        .tt-theme-blue   { background: #eff6ff;  border-color: #60a5fa; }
-        .tt-theme-orange { background: #fff7ed;  border-color: #fb923c; }
-        .tt-theme-green  { background: #f0fdf4;  border-color: #4ade80; }
-        .tt-theme-red    { background: #fef2f2;  border-color: #f87171; }
-        .tt-theme-purple { background: #f5f3ff;  border-color: #a78bfa; }
-        .tt-theme-teal   { background: #f0fdfa;  border-color: #2dd4bf; }
-        .tt-theme-pink   { background: #fdf2f8;  border-color: #f472b6; }
-        .tt-theme-amber  { background: #fffbeb;  border-color: #fbbf24; }
-        .tt-theme-cyan   { background: #ecfeff;  border-color: #22d3ee; }
-        .tt-theme-lime   { background: #f7fee7;  border-color: #a3e635; }
+        .tt-theme-blue   { background: #eff6ff;  border-color: #3b82f6; color: #3b82f6; }
+        .tt-theme-orange { background: #fff7ed;  border-color: #f97316; color: #f97316; }
+        .tt-theme-green  { background: #f0fdf4;  border-color: #22c55e; color: #22c55e; }
+        .tt-theme-red    { background: #fef2f2;  border-color: #ef4444; color: #ef4444; }
+        .tt-theme-purple { background: #faf5ff;  border-color: #a855f7; color: #a855f7; }
+        .tt-theme-teal   { background: #f0fdfa;  border-color: #14b8a6; color: #14b8a6; }
+        .tt-theme-pink   { background: #fdf2f8;  border-color: #ec4899; color: #ec4899; }
+        .tt-theme-amber  { background: #fffbeb;  border-color: #f59e0b; color: #f59e0b; }
+        .tt-theme-cyan   { background: #ecfeff;  border-color: #06b6d4; color: #06b6d4; }
+        .tt-theme-lime   { background: #f7fee7;  border-color: #84cc16; color: #84cc16; }
 
         /* Empty cell */
         .tt-empty {
-            border: 2px dashed #e5e7eb;
-            border-radius: 12px;
+            border: 2px dashed var(--border-color);
+            border-radius: var(--rounded-md);
             height: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #c4c4c4;
-            font-size: 13px;
+            color: var(--text-muted);
+            font-size: 12px;
+            font-weight: 500;
             cursor: pointer;
-            transition: border-color .2s, background .2s;
+            transition: all 0.2s ease;
         }
         .tt-empty:hover {
-            border-color: #a5b4fc;
-            background: #f5f3ff;
-            color: #7c3aed;
+            border-color: var(--color-primary);
+            background: rgba(79, 70, 229, 0.05);
+            color: var(--color-primary);
         }
 
         /* Break / Lunch row */
         .tt-break td {
-            background: linear-gradient(90deg, #fef9c3 0%, #fef08a 100%);
+            background: linear-gradient(90deg, #fef9c3 0%, #fef08a 100%) !important;
             text-align: center;
             vertical-align: middle;
-            height: 48px;
-            font-weight: 600;
-            font-size: 13px;
+            height: 50px;
+            font-weight: 700;
+            font-size: 12px;
             color: #92400e;
-            letter-spacing: .5px;
+            letter-spacing: 0.5px;
             border-bottom: 1px solid #fde68a;
         }
-        .tt-break td:first-child {
-            background: linear-gradient(90deg, #fef9c3 0%, #fef08a 100%);
-            color: #92400e;
-        }
         .tt-lunch td {
-            background: linear-gradient(90deg, #fce7f3 0%, #fbcfe8 100%);
+            background: linear-gradient(90deg, #fce7f3 0%, #fbcfe8 100%) !important;
             text-align: center;
             vertical-align: middle;
-            height: 48px;
-            font-weight: 600;
-            font-size: 13px;
+            height: 50px;
+            font-weight: 700;
+            font-size: 12px;
             color: #9d174d;
-            letter-spacing: .5px;
+            letter-spacing: 0.5px;
             border-bottom: 1px solid #f9a8d4;
-        }
-        .tt-lunch td:first-child {
-            background: linear-gradient(90deg, #fce7f3 0%, #fbcfe8 100%);
-            color: #9d174d;
         }
 
         /* Loading spinner */
@@ -305,157 +495,227 @@
         .toast {
             position: fixed;
             top: 24px; right: 24px;
-            padding: 14px 24px;
-            border-radius: 12px;
+            padding: 16px 24px;
+            border-radius: var(--rounded-md);
             font-size: 14px;
             font-weight: 600;
             color: #fff;
             z-index: 9999;
-            box-shadow: 0 8px 24px rgba(0,0,0,.15);
+            box-shadow: var(--shadow-xl);
             transform: translateX(120%);
             transition: transform .3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
         .toast.show { transform: translateX(0); }
-        .toast-success { background: #059669; }
-        .toast-error { background: #dc2626; }
+        .toast-success { background: linear-gradient(135deg, var(--color-success) 0%, #10b981 100%); }
+        .toast-error { background: linear-gradient(135deg, var(--color-danger) 0%, #f87171 100%); }
 
         /* ===== MODAL ===== */
         .modal-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(0,0,0,.45);
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
             z-index: 10000;
             display: flex;
             align-items: center;
             justify-content: center;
             opacity: 0;
-            transition: opacity .25s;
+            transition: opacity .25s ease;
         }
         .modal-overlay.show { opacity: 1; }
         .modal-box {
-            background: #fff;
-            border-radius: 16px;
-            padding: 28px 32px;
-            width: 420px;
+            background: var(--bg-primary);
+            border-radius: var(--rounded-xl);
+            padding: 32px;
+            width: 440px;
             max-width: 95vw;
-            box-shadow: 0 20px 60px rgba(0,0,0,.2);
-            transform: translateY(20px);
-            transition: transform .25s;
+            box-shadow: var(--shadow-xl);
+            transform: translateY(20px) scale(0.95);
+            transition: transform .25s ease;
+            border: 1px solid var(--border-color);
         }
-        .modal-overlay.show .modal-box { transform: translateY(0); }
+        .modal-overlay.show .modal-box { 
+            transform: translateY(0) scale(1); 
+        }
         .modal-box h3 {
             font-size: 18px;
             font-weight: 700;
-            color: #1a1a2e;
-            margin-bottom: 20px;
+            color: var(--text-primary);
+            margin-bottom: 24px;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
         }
         .modal-field {
-            margin-bottom: 14px;
+            margin-bottom: 18px;
         }
         .modal-field label {
             display: block;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 600;
-            color: #6b7280;
-            margin-bottom: 5px;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         .modal-field input, .modal-field select {
             width: 100%;
-            padding: 10px 14px;
-            border: 1.5px solid #e0e0e0;
-            border-radius: 10px;
+            padding: 12px 16px;
+            border: 2px solid var(--border-color);
+            border-radius: var(--rounded-md);
             font-size: 14px;
-            font-family: 'Inter', sans-serif;
-            background: #fafafa;
+            font-family: inherit;
+            background: var(--bg-secondary);
             outline: none;
-            transition: border-color .2s;
+            transition: all 0.2s ease;
+            color: var(--text-primary);
         }
         .modal-field input:focus, .modal-field select:focus {
-            border-color: #4f46e5;
-            background: #fff;
+            border-color: var(--color-primary);
+            background: var(--bg-primary);
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
         }
         .modal-actions {
             display: flex;
             justify-content: flex-end;
-            gap: 10px;
-            margin-top: 20px;
+            gap: 12px;
+            margin-top: 24px;
         }
         .btn-secondary {
-            padding: 10px 22px;
-            border: 1.5px solid #e0e0e0;
-            border-radius: 10px;
+            padding: 12px 24px;
+            border: 2px solid var(--border-color);
+            border-radius: var(--rounded-md);
             font-size: 14px;
             font-weight: 600;
-            font-family: 'Inter', sans-serif;
+            font-family: inherit;
             cursor: pointer;
-            background: #fff;
-            color: #374151;
-            transition: background .15s;
+            background: var(--bg-primary);
+            color: var(--text-secondary);
+            transition: all 0.2s ease;
         }
-        .btn-secondary:hover { background: #f3f4f6; }
+        .btn-secondary:hover { 
+            background: var(--bg-secondary);
+            border-color: var(--border-hover);
+        }
 
         /* Confirm dialog */
         .confirm-box {
             text-align: center;
-            padding: 30px;
+            padding: 20px;
         }
         .confirm-box .confirm-icon {
-            width: 56px; height: 56px;
+            width: 64px; height: 64px;
             border-radius: 50%;
-            background: #fef2f2;
+            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 16px;
+            margin-bottom: 20px;
         }
-        .confirm-box .confirm-icon i { font-size: 24px; color: #ef4444; }
+        .confirm-box .confirm-icon i { 
+            font-size: 26px; 
+            color: var(--color-danger); 
+        }
         .confirm-box p {
-            font-size: 15px;
-            color: #374151;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
             margin-bottom: 8px;
         }
         .confirm-box .confirm-sub {
             font-size: 13px;
-            color: #9ca3af;
+            color: var(--text-secondary);
+        }
+
+        /* Conflict list */
+        .conflict-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .conflict-list .conflict-item {
+            padding: 12px 16px;
+            margin-bottom: 8px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--rounded-md);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .conflict-list .conflict-item strong {
+            color: var(--text-primary);
+        }
+        .conflict-list .conflict-class {
+            color: var(--color-danger);
+            font-weight: 600;
         }
 
         /* Responsive */
         @media (max-width: 900px) {
             .subject-row { grid-template-columns: 1fr; }
             .form-grid { grid-template-columns: 1fr 1fr; }
-            body { padding: 14px; }
+            body { padding: 20px 16px; }
+            .form-section, .schedule-section { padding: 24px; }
+            .page-header h1 { font-size: 26px; }
+        }
+        @media (max-width: 576px) {
+            .form-grid { grid-template-columns: 1fr; }
+            .btn-group { flex-direction: column; }
+            .btn-group .btn { width: 100%; justify-content: center; }
         }
     </style>
 </head>
 <body>
 
+<!-- ===== PAGE HEADER ===== -->
+<div class="page-header">
+    <h1><i class="fa-solid fa-calendar-days"></i> Timetable Scheduler</h1>
+    <p>Create and manage your weekly class timetable with ease</p>
+</div>
+
 <!-- ===== INPUT FORM ===== -->
 <div class="form-section">
-    <h2><i class="fa-solid fa-calendar-plus" style="color:#4f46e5;margin-right:8px;"></i> Timetable Input Form</h2>
+    <h2><i class="fa-solid fa-circle-info"></i> Class Information</h2>
 
     <div class="form-grid">
-        <input type="text" id="class" placeholder="Class (e.g. III IT A)">
-        <input type="text" id="dept" placeholder="Department">
-        <input type="number" id="year" placeholder="Year" min="1">
-        <input type="number" id="sem" placeholder="Semester" min="1">
-        <input type="text" id="academic_year" placeholder="Academic Year (2025-2026)">
+        <div class="form-field">
+            <label>Class Name</label>
+            <input type="text" id="class" placeholder="e.g. III IT A">
+        </div>
+        <div class="form-field">
+            <label>Department</label>
+            <input type="text" id="dept" placeholder="e.g. Information Technology">
+        </div>
+        <div class="form-field">
+            <label>Year</label>
+            <input type="number" id="year" placeholder="e.g. 3" min="1">
+        </div>
+        <div class="form-field">
+            <label>Semester</label>
+            <input type="number" id="sem" placeholder="e.g. 5" min="1">
+        </div>
+        <div class="form-field">
+            <label>Academic Year</label>
+            <input type="text" id="academic_year" placeholder="e.g. 2025-2026">
+        </div>
     </div>
 
-    <div class="subjects-title"><i class="fa-solid fa-book" style="color:#6366f1;margin-right:6px;"></i> Subjects</div>
+    <div class="subjects-title"><i class="fa-solid fa-book-open"></i> Subject Allocation</div>
     <div id="subjects-container"></div>
 
     <div class="btn-group">
         <button class="btn btn-primary" onclick="addSubject()"><i class="fa-solid fa-plus"></i> Add Subject</button>
         <button class="btn btn-success" id="generateBtn" onclick="submitForm()"><i class="fa-solid fa-wand-magic-sparkles"></i> Generate Timetable</button>
+        <button class="btn btn-save" id="saveBtn" onclick="fixTimetable()"><i class="fa-solid fa-database"></i> Save to Database</button>
     </div>
 </div>
 
 <!-- ===== TIMETABLE DISPLAY ===== -->
 <div id="timetable-display"></div>
-<button onclick="fixTimetable()">Fix timetable</button>
 
 <div id="toast" class="toast"></div>
 
@@ -497,10 +757,22 @@
     </div>
 </div>
 
+<!-- ===== VIEW TIMETABLE MODAL ===== -->
+<div id="viewModal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeViewModal()">
+    <div class="modal-box" style="width: 90vw; max-width: 1200px;">
+        <h3><i class="fa-solid fa-eye" style="color:#4f46e5"></i> View Timetable</h3>
+        <div id="viewTimetableContent"></div>
+        <div class="modal-actions">
+            <button class="btn-secondary" onclick="closeViewModal()">Close</button>
+        </div>
+    </div>
+</div>
+
 <script>
 let staffList = [];
 let timetabledata = {};
 let currentTimetable = null; // stores the live timetable data
+let currentConflicts = null; // stores current conflicts for viewing
 
 const COLORS = ['blue','orange','green','red','purple','teal','pink','amber','cyan','lime'];
 
@@ -545,192 +817,149 @@ function fixTimetable(){
         return;
     }
 
-    // Find the Fix button (the simple one on the page) to show spinner/disable
-    const btn = document.querySelector('button[onclick="fixTimetable()"]');
+    // Find the Save button to show spinner/disable
+    const btn = document.getElementById('saveBtn');
     let orig = null;
     if(btn){
         orig = btn.innerHTML;
         btn.disabled = true;
-        btn.innerHTML = '<span class="spinner"></span> Sending...';
+        btn.innerHTML = '<span class="spinner"></span> Saving...';
     }
 
-    const payload = {
-    class: $("#class").val(),
-    dept: $("#dept").val(),
-    year: parseInt($("#year").val()),
-    sem: parseInt($("#sem").val()),
-    academic_year: $("#academic_year").val(),
-    timetable: currentTimetable
-};
+    $.ajax({
+        url: 'fixtt.php',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            class: $("#class").val(),
+            dept: $("#dept").val(),
+            year: parseInt($("#year").val()),
+            sem: parseInt($("#sem").val()),
+            academic_year: $("#academic_year").val(),
+            timetable: currentTimetable,
+            override: false
+        }),
+        success: function(response){
+            if(btn){ btn.disabled = false; btn.innerHTML = orig; }
 
-$.ajax({
-    url: 'fixtt.php',
-    type: 'POST',
-    contentType: 'application/json',
-    dataType: 'json',
-    data: JSON.stringify(payload),
+            // Handle fixtt.php JSON response and show SweetAlert2 modals
+            try{
+                // response is expected as an object (jQuery parses JSON)
+                if(response && response.status === 'conflicts'){
+                    currentConflicts = response.conflicts;
 
-    success: function(response){
-
-        if(btn){
-            btn.disabled = false;
-            btn.innerHTML = orig;
-        }
-
-        try{
-
-            if(response && response.status === 'conflicts'){
-
-                let list = '<ul style="text-align:left;margin:0;padding-left:18px;">';
-
-                if(response.conflicts && response.conflicts.staffconflicts){
-                    response.conflicts.staffconflicts.forEach(c=>{
-                        list += `<li>Staff ${c.staff_id} conflict with ${c.conflict_with_class} — ${c.day}, Period ${c.hour_no}</li>`;
-                    });
-                }
-
-                if(response.conflicts && response.conflicts.classconflicts){
-                    response.conflicts.classconflicts.forEach(c=>{
-                        list += `<li>Class conflict — ${c.day}, Period ${c.hour_no}</li>`;
-                    });
-                }
-
-                list += '<li><b>Do you want to proceed anyway? This will override the old data.</b></li>';
-                list += '</ul>';
-
-                Swal.fire({
-                    title: 'Conflicting Periods',
-                    html: list,
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonText: 'Override',
-                    cancelButtonText: 'Cancel',
-                    allowOutsideClick: false
-                }).then(result => {
-
-                    if(result.isConfirmed){
-
-                        if(btn){
-                            btn.disabled = true;
-                            btn.innerHTML = '<span class="spinner"></span> Overriding...';
-                        }
-
-                        payload.override = true;
-
-                        $.ajax({
-                            url: 'fixtt.php',
-                            type: 'POST',
-                            contentType: 'application/json',
-                            dataType: 'json',
-                            data: JSON.stringify(payload),
-
-                            success: function(resp){
-
-                                if(btn){
-                                    btn.disabled = false;
-                                    btn.innerHTML = orig;
-                                }
-
-                                if(resp && resp.status === 'ok'){
-
-                                    Swal.fire({
-                                        title: 'Saved',
-                                        text: resp.message || 'Override applied successfully',
-                                        icon: 'success'
-                                    });
-
-                                } else if(resp && resp.status === 'conflicts'){
-
-                                    Swal.fire({
-                                        title: 'Still Conflicts',
-                                        html: '<pre style="text-align:left">'+JSON.stringify(resp.conflicts,null,2)+'</pre>',
-                                        icon: 'warning'
-                                    });
-
-                                } else {
-
-                                    Swal.fire({
-                                        title: 'Server Response',
-                                        text: JSON.stringify(resp),
-                                        icon: 'info'
-                                    });
-
-                                }
-
-                                console.log('Override response:', resp);
-                            },
-
-                            error: function(err){
-
-                                if(btn){
-                                    btn.disabled = false;
-                                    btn.innerHTML = orig;
-                                }
-
-                                Swal.fire({
-                                    title: 'Error',
-                                    text: 'Failed to send override',
-                                    icon: 'error'
-                                });
-
-                                console.error('Override error:', err);
-                            }
+                    // build a readable list of conflicts
+                    let smlist = '';
+                    let cmlist = '';
+                    let list = '<ul style="text-align:left;margin:0;padding-left:18px;">';
+                    if(response.conflicts.staffconflicts && response.conflicts.staffconflicts.length > 0){
+                        response.conflicts.staffconflicts.forEach(c => {
+                            smlist += `<li>Staff conflict: ${c.day}, Period ${c.hour_no} with class ${c.conflict_with_class}</li>`;
                         });
-
+                        list += '<li><button class="btn btn-primary" onclick="showStaffConflicts()">View Staff Conflicts</button></li>';
                     }
+                    if(response.conflicts.classconflicts && response.conflicts.classconflicts.length > 0){
+                        response.conflicts.classconflicts.forEach(c => {
+                            cmlist += `<li>Class conflict: ${c.day}, Period ${c.hour_no} with class ${c.conflict_with_class}</li>`;
+                        });
+                        list += '<li><button class="btn btn-success" onclick="showClassConflicts()">View Class Conflicts</button></li>';
+                    }
+                    list += '<li>Do you want to proceed anyway? Then press OK. This will override the old data.</li>';
+                    list += '</ul>';
 
-                });
+                    Swal.fire({
+                        title: 'Conflicting Periods',
+                        html: list,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'OK',
+                        cancelButtonText: 'No',
+                        allowOutsideClick: false
+                    }).then(result => {
+                        if(result.isConfirmed){
+                            // user chose to proceed; resend same payload with override=true
+                            if(btn){ btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Overriding...'; }
 
-            }
+                            $.ajax({
+                                url: 'fixtt.php',
+                                type: 'POST',
+                                contentType: 'application/json',
+                                data: JSON.stringify({
+                                    class: $("#class").val(),
+                                    dept: $("#dept").val(),
+                                    year: parseInt($("#year").val()),
+                                    sem: parseInt($("#sem").val()),
+                                    academic_year: $("#academic_year").val(),
+                                    timetable: currentTimetable,
+                                    override: true
+                                }),
+                                success: function(resp){
+                                    if(btn){ btn.disabled = false; btn.innerHTML = orig; }
+                                    try{
+                                        if(resp && resp.status === 'conflicts'){
+                                            Swal.fire({
+                                                title: 'Still Conflicts',
+                                                html: '<pre style="text-align:left">'+JSON.stringify(resp.conflicts, null, 2)+'</pre>',
+                                                icon: 'warning'
+                                            });
+                                        } else if(resp && resp.status === 'ok'){
+                                            Swal.fire({
+                                                title: 'Saved',
+                                                text: resp.message || 'Override applied successfully',
+                                                icon: 'success'
+                                            });
+                                        } else {
+                                            Swal.fire({ title: 'Response', text: JSON.stringify(resp), icon: 'info' });
+                                        }
+                                    }catch(e){
+                                        console.error('Error handling override response', e);
+                                    }
+                                    console.log('fixtt.php override response:', resp);
+                                },
+                                error: function(err){
+                                    if(btn){ btn.disabled = false; btn.innerHTML = orig; }
+                                    Swal.fire({ title: 'Error', text: 'Failed to send override', icon: 'error' });
+                                    console.error('fixtt.php override error:', err);
+                                }
+                            });
+                        }
+                    });
 
-            else if(response && response.status === 'ok'){
+                } else if(response && response.status === 'ok'){
+                    Swal.fire({
+                        title: 'No Conflicts',
+                        text: response.message || 'No periods conflict',
+                        icon: 'success',
+                        confirmButtonText: 'OK'
+                    });
 
+                } else {
+                    Swal.fire({
+                        title: 'Response',
+                        text: JSON.stringify(response),
+                        icon: 'info',
+                        confirmButtonText: 'OK'
+                    });
+                }
+            }catch(e){
+                console.error('Error handling fixtt response', e);
                 Swal.fire({
-                    title: 'Success',
-                    text: response.message || 'Timetable updated',
-                    icon: 'success'
+                    title: 'Error',
+                    text: 'Failed to parse response from server',
+                    icon: 'error',
+                    confirmButtonText: 'OK'
                 });
-
             }
 
-            else{
-
-                Swal.fire({
-                    title: 'Server Response',
-                    text: JSON.stringify(response),
-                    icon: 'info'
-                });
-
-            }
-
+            showToast('Timetable sent to fixtt.php', 'success');
+            console.log('fixtt.php response:', response);
+        },
+        error: function(err){
+            if(btn){ btn.disabled = false; btn.innerHTML = orig; }
+            showToast('Failed to send timetable', 'error');
+            console.error('fixtt.php error:', err);
         }
-        catch(e){
-
-            console.error('Response parsing error:', e);
-
-            Swal.fire({
-                title: 'Error',
-                text: 'Failed to parse server response',
-                icon: 'error'
-            });
-
-        }
-
-        showToast('Timetable sent to fixtt.php', 'success');
-        console.log('fixtt.php response:', response);
-    },
-
-    error: function(err){
-
-        if(btn){
-            btn.disabled = false;
-            btn.innerHTML = orig;
-        }
-
-        showToast('Failed to send timetable', 'error');
-        console.error('fixtt.php error:', err);
-    }
-});
+    });
 }
 function addSubject(){
     let options = '';
@@ -807,6 +1036,8 @@ function submitForm(){
             timetableData = response.timetable;
             currentTimetable = response.timetable;
             renderTimetable(currentTimetable);
+            // Show the save button after successful generation
+            document.getElementById('saveBtn').classList.add('visible');
         },
         error: function(err){
             btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Generate Timetable';
@@ -836,16 +1067,29 @@ function buildColorMap(data){
     return map;
 }
 
-function renderTimetable(data){
+function renderTimetable(data, target = '#timetable-display'){
     const days = ["Mon","Tue","Wed","Thu","Fri"];
     const daysFull = ["Monday","Tuesday","Wednesday","Thursday","Friday"];
     const colorMap = buildColorMap(data);
 
+    // Count filled slots
+    let filledCount = 0;
+    days.forEach(d => {
+        for(let h=1; h<=7; h++){
+            if(data[d] && data[d][h] && data[d][h].subject) filledCount++;
+        }
+    });
+
     let html = `
     <div class="schedule-section">
         <div class="schedule-header">
-            <h2>Weekly Schedule</h2>
-            <i class="fa-solid fa-pen schedule-header .edit-icon" style="color:#9ca3af;cursor:pointer;font-size:16px;" title="Edit"></i>
+            <div class="schedule-header-left">
+                <div class="schedule-header-icon"><i class="fa-solid fa-table-cells-large"></i></div>
+                <h2>Weekly Schedule</h2>
+            </div>
+            <div class="schedule-badge">
+                <i class="fa-solid fa-check-circle"></i> ${filledCount}/35 Periods
+            </div>
         </div>
         <table class="tt-grid">
             <thead>
@@ -905,7 +1149,7 @@ function renderTimetable(data){
     });
 
     html += `</tbody></table></div>`;
-    $('#timetable-display').html(html);
+    $(target).html(html);
 }
 
 // ===== EDIT MODAL =====
@@ -1005,6 +1249,107 @@ function confirmDelete(){
     showToast('Period deleted', 'success');
 }
 
+function closeViewModal(){
+    const modal = document.getElementById('viewModal');
+    modal.classList.remove('show');
+    setTimeout(()=> modal.style.display = 'none', 250);
+}
+
+function viewClassTimetable(){
+    $('#viewModal .modal-box h3').html('<i class="fa-solid fa-eye" style="color:#4f46e5"></i> View Existing Timetable');
+    const payload = {
+        class: $("#class").val(),
+        dept: $("#dept").val(),
+        year: parseInt($("#year").val()),
+        sem: parseInt($("#sem").val()),
+        academic_year: $("#academic_year").val()
+        // Assuming api.php returns existing timetable if no subjects
+    };
+    $('#viewTimetableContent').html('<div id="loading">Loading timetable...</div>');
+    const modal = document.getElementById('viewModal');
+    modal.style.display = 'flex';
+    setTimeout(()=> modal.classList.add('show'), 10);
+    $.ajax({
+        url: "api.php",
+        type: "POST",
+        contentType: "application/json",
+        data: JSON.stringify(payload),
+        success: function(response){
+            if(response.timetable){
+                renderTimetable(response.timetable, '#viewTimetableContent');
+            } else {
+                $('#viewTimetableContent').html('<p>No existing timetable found</p>');
+            }
+        },
+        error: function(){
+            $('#viewTimetableContent').html('<p>Failed to fetch timetable</p>');
+        }
+    });
+}
+
+function viewStaffConflicts(){
+    if(!currentConflicts || !currentConflicts.staffconflicts || currentConflicts.staffconflicts.length === 0) return;
+    $('#viewModal .modal-box h3').html('<i class="fa-solid fa-eye" style="color:#4f46e5"></i> View Conflicting Timetables');
+    const uniqueClasses = [...new Set(currentConflicts.staffconflicts.map(c => c.conflict_with_class))];
+    $('#viewTimetableContent').html('<div id="loading">Loading timetables...</div>');
+    const modal = document.getElementById('viewModal');
+    modal.style.display = 'flex';
+    setTimeout(()=> modal.classList.add('show'), 10);
+
+    let promises = uniqueClasses.map(cls => {
+        return $.ajax({
+            url: "api.php",
+            type: "POST",
+            contentType: "application/json",
+            data: JSON.stringify({
+                class: cls
+                // Assuming other params are optional or default
+            })
+        });
+    });
+
+    Promise.all(promises).then(responses => {
+        let html = '<h4>Conflicting Class Timetables</h4>';
+        responses.forEach((response, index) => {
+            if(response.timetable){
+                html += `<h5>Class: ${uniqueClasses[index]}</h5>`;
+                const tempDiv = document.createElement('div');
+                renderTimetable(response.timetable, tempDiv);
+                html += tempDiv.innerHTML;
+            }
+        });
+        $('#viewTimetableContent').html(html);
+    }).catch(() => {
+        $('#viewTimetableContent').html('<p>Failed to load timetables</p>');
+    });
+}
+function showStaffConflicts(){
+    if(!currentConflicts || !currentConflicts.staffconflicts || currentConflicts.staffconflicts.length === 0) return;
+    $('#viewModal .modal-box h3').html('<i class="fa-solid fa-exclamation-triangle" style="color:#f59e0b"></i> Staff Conflicts');
+    let html = '<div style="max-height: 400px; overflow-y: auto;"><ul class="conflict-list">';
+    currentConflicts.staffconflicts.forEach(c => {
+        html += `<li class="conflict-item"><strong>${c.day}, Period ${c.hour_no}</strong> - Conflict with class: <span class="conflict-class">${c.conflict_with_class}</span></li>`;
+    });
+    html += '</ul></div>';
+    $('#viewTimetableContent').html(html);
+    const modal = document.getElementById('viewModal');
+    modal.style.display = 'flex';
+    setTimeout(()=> modal.classList.add('show'), 10);
+}
+
+function showClassConflicts(){
+    if(!currentConflicts || !currentConflicts.classconflicts || currentConflicts.classconflicts.length === 0) return;
+    $('#viewModal .modal-box h3').html('<i class="fa-solid fa-calendar-times" style="color:#ef4444"></i> Class Conflicts');
+    let html = '<div style="max-height: 400px; overflow-y: auto;"><ul class="conflict-list">';
+    currentConflicts.classconflicts.forEach(c => {
+        html += `<li class="conflict-item"><strong>${c.day}, Period ${c.hour_no}</strong> - Conflict with class: <span class="conflict-class">${c.conflict_with_class}</span></li>`;
+    });
+    html += '</ul></div>';
+    $('#viewTimetableContent').html(html);
+    const modal = document.getElementById('viewModal');
+    modal.style.display = 'flex';
+    setTimeout(()=> modal.classList.add('show'), 10);
+}
 </script>
 </body>
 </html>

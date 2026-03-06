@@ -1,5 +1,5 @@
 <?php
-$conn = new mysqli("localhost", "root", "", "tsquare");
+$conn = new mysqli("localhost", "user", "", "tsquare");
 
 $result = $conn->query("SELECT id, name, dept FROM staff");
 
