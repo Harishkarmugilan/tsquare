@@ -654,6 +654,21 @@
             font-weight: 600;
         }
 
+        /* Tables for conflict summaries */
+        .conflict-summary-table, .conflict-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 12px;
+            font-size: 13px;
+        }
+        .conflict-summary-table th, .conflict-summary-table td,
+        .conflict-table th, .conflict-table td {
+            border: 1px solid var(--border-color);
+            padding: 6px 8px;
+            text-align: center;
+        }
+        .conflict-summary-table th { background: var(--bg-tertiary); font-weight: 600; }
+
         /* Responsive */
         @media (max-width: 900px) {
             .subject-row { grid-template-columns: 1fr; }
@@ -848,25 +863,23 @@ function fixTimetable(){
                 if(response && response.status === 'conflicts'){
                     currentConflicts = response.conflicts;
 
-                    // build a readable list of conflicts
-                    let smlist = '';
-                    let cmlist = '';
-                    let list = '<ul style="text-align:left;margin:0;padding-left:18px;">';
+                    // simple conflict summary message
+                    let msg = '';
                     if(response.conflicts.staffconflicts && response.conflicts.staffconflicts.length > 0){
-                        response.conflicts.staffconflicts.forEach(c => {
-                            smlist += `<li>Staff conflict: ${c.day}, Period ${c.hour_no} with class ${c.conflict_with_class}</li>`;
-                        });
-                        list += '<li><button class="btn btn-primary" onclick="showStaffConflicts()">View Staff Conflicts</button></li>';
+                        msg += '<p><strong>Staff conflicts detected.</strong></p>';
                     }
                     if(response.conflicts.classconflicts && response.conflicts.classconflicts.length > 0){
-                        response.conflicts.classconflicts.forEach(c => {
-                            cmlist += `<li>Class conflict: ${c.day}, Period ${c.hour_no} with class ${c.conflict_with_class}</li>`;
-                        });
-                        list += '<li><button class="btn btn-success" onclick="showClassConflicts()">View Class Conflicts</button></li>';
+                        msg += '<p><strong>Class conflicts detected.</strong></p>';
                     }
-                    list += '<li>Do you want to proceed anyway? Then press OK. This will override the old data.</li>';
-                    list += '</ul>';
-
+                    msg += '<p>If you wish to inspect details, use the buttons below.</p>';
+                    let list = msg;
+                    if(response.conflicts.staffconflicts && response.conflicts.staffconflicts.length > 0){
+                        list += '<div style="margin-top:10px;"><button class="btn btn-primary" onclick="showStaffConflicts()">View Staff Conflict Grid</button></div>';
+                    }
+                    if(response.conflicts.classconflicts && response.conflicts.classconflicts.length > 0){
+                        list += '<div style="margin-top:10px;"><button class="btn btn-success" onclick="showClassConflicts()">View Class Conflict Grid</button></div>';
+                    }
+                    list += '<p style="margin-top:12px;">Proceed anyway? This will override the old data.</p>';
                     Swal.fire({
                         title: 'Conflicting Periods',
                         html: list,
@@ -1323,14 +1336,31 @@ function viewStaffConflicts(){
         $('#viewTimetableContent').html('<p>Failed to load timetables</p>');
     });
 }
+// helper converts conflicts list into 5x7 grid HTML
+function conflictsToGrid(conflicts){
+    const days = ["Mon","Tue","Wed","Thu","Fri"];
+    const grid = {};
+    conflicts.forEach(c => {
+        if(!grid[c.day]) grid[c.day] = {};
+        grid[c.day][c.hour_no] = c.conflict_with_class;
+    });
+    let html = '<table class="conflict-table"><thead><tr><th>Period</th>' + days.map(d=>`<th>${d}</th>`).join('') + '</tr></thead><tbody>';
+    for(let p=1; p<=7; p++){
+        html += '<tr><td>'+p+'</td>';
+        days.forEach(d=>{
+            const val = (grid[d] && grid[d][p]) ? grid[d][p] : '';
+            html += '<td>'+val+'</td>';
+        });
+        html += '</tr>';
+    }
+    html += '</tbody></table>';
+    return html;
+}
+
 function showStaffConflicts(){
     if(!currentConflicts || !currentConflicts.staffconflicts || currentConflicts.staffconflicts.length === 0) return;
     $('#viewModal .modal-box h3').html('<i class="fa-solid fa-exclamation-triangle" style="color:#f59e0b"></i> Staff Conflicts');
-    let html = '<div style="max-height: 400px; overflow-y: auto;"><ul class="conflict-list">';
-    currentConflicts.staffconflicts.forEach(c => {
-        html += `<li class="conflict-item"><strong>${c.day}, Period ${c.hour_no}</strong> - Conflict with class: <span class="conflict-class">${c.conflict_with_class}</span></li>`;
-    });
-    html += '</ul></div>';
+    const html = '<div style="overflow-x:auto; max-height:400px;">' + conflictsToGrid(currentConflicts.staffconflicts) + '</div>';
     $('#viewTimetableContent').html(html);
     const modal = document.getElementById('viewModal');
     modal.style.display = 'flex';
@@ -1340,11 +1370,7 @@ function showStaffConflicts(){
 function showClassConflicts(){
     if(!currentConflicts || !currentConflicts.classconflicts || currentConflicts.classconflicts.length === 0) return;
     $('#viewModal .modal-box h3').html('<i class="fa-solid fa-calendar-times" style="color:#ef4444"></i> Class Conflicts');
-    let html = '<div style="max-height: 400px; overflow-y: auto;"><ul class="conflict-list">';
-    currentConflicts.classconflicts.forEach(c => {
-        html += `<li class="conflict-item"><strong>${c.day}, Period ${c.hour_no}</strong> - Conflict with class: <span class="conflict-class">${c.conflict_with_class}</span></li>`;
-    });
-    html += '</ul></div>';
+    const html = '<div style="overflow-x:auto; max-height:400px;">' + conflictsToGrid(currentConflicts.classconflicts) + '</div>';
     $('#viewTimetableContent').html(html);
     const modal = document.getElementById('viewModal');
     modal.style.display = 'flex';
