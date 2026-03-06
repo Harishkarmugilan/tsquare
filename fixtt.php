@@ -19,7 +19,7 @@ $year = isset($payload['year']) ? intval($payload['year']) : null;
 $sem = isset($payload['sem']) ? intval($payload['sem']) : null;
 $academic_year = $payload['academic_year'] ?? null;
 $timetable = $payload['timetable'] ?? null;
-$override = !empty($payload['override']);
+$override = $payload['override'];
 
 $conn = mysqli_connect("localhost", "user", "", "tsquare");
 
@@ -89,9 +89,9 @@ function checkConflicts($conn, $timetable, $academic_year, $year, $sem, $dept_es
             }
 
             $z = mysqli_query($conn, "
-                SELECT class_name
+                SELECT *
                 FROM timetable
-                WHERE class_name!='$class_esc'
+                WHERE class_name='$class_esc'
                 AND dept='$dept_esc'
                 AND year=$year
                 AND sem=$sem
@@ -141,13 +141,13 @@ function updateTimetable($conn, $class, $dept, $year, $sem, $academic_year, $tim
     /* remove old timetable of the class */
 
     mysqli_query($conn, "
-DELETE FROM timetable
-WHERE class_name='$class_esc'
-AND dept='$dept_esc'
-AND year=$year
-AND sem=$sem
-AND academic_year='$ay_esc'
-");
+        DELETE FROM timetable
+        WHERE class_name='$class_esc'
+        AND dept='$dept_esc'
+        AND year=$year
+        AND sem=$sem
+        AND academic_year='$ay_esc'
+        ");
 
 
     foreach ($timetable as $day => $hours) {
